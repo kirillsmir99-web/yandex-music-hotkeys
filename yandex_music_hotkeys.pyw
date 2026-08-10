@@ -4,14 +4,14 @@ import os
 import time
 import tempfile
 import asyncio
+import threading
 import ctypes
-import ctypes.wintypes
 import subprocess
 
 from PyQt6.QtCore import (
     Qt, QTimer, QPropertyAnimation, QEasingCurve,
     pyqtSignal, QObject, QRectF, QPoint,
-    QParallelAnimationGroup, QAbstractNativeEventFilter
+    QParallelAnimationGroup
 )
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QHBoxLayout, QVBoxLayout,
@@ -21,6 +21,8 @@ from PyQt6.QtGui import (
     QPixmap, QPainter, QPainterPath, QColor, QPen,
     QBrush, QLinearGradient, QFont, QRegion
 )
+
+import keyboard
 
 try:
     from pycaw.pycaw import AudioUtilities
@@ -799,62 +801,20 @@ def handle(action: str):
         _run(_media(action))
 
 
-# ==========================================================
-# Native Hotkeys (Zero Latency)
-# ==========================================================
-WM_HOTKEY = 0x0312
-MOD_CONTROL = 0x0002
-MOD_SHIFT = 0x0004
-
-VK_Z = 0x5A
-VK_X = 0x58
-VK_C = 0x43
-VK_LEFT = 0x25
-VK_RIGHT = 0x27
-VK_UP = 0x26
-VK_DOWN = 0x28
-VK_M = 0x4D
-VK_O = 0x4F
-VK_K = 0x4B
-VK_H = 0x48
-
-HOTKEY_MAPPING = {
-    1: "prev",
-    2: "next",
-    3: "play_pause",
-    4: "seek_left",
-    5: "seek_right",
-    6: "vol_up",
-    7: "vol_down",
-    8: "vol_mute",
-    9: "toggle_overlay",
-    10: "show_help",
-    11: "launch",
-}
-
-class HotkeyEventFilter(QAbstractNativeEventFilter):
-    def nativeEventFilter(self, eventType, message):
-        if eventType == b"windows_generic_MSG" or eventType == b"windows_dispatcher_MSG":
-            msg = ctypes.wintypes.MSG.from_address(message.__int__())
-            if msg.message == WM_HOTKEY:
-                action = HOTKEY_MAPPING.get(msg.wParam)
-                if action:
-                    handle(action)
-                return True, 0
-        return False, 0
-
-def _register_hotkeys():
-    user32.RegisterHotKey(0, 1, MOD_CONTROL | MOD_SHIFT, VK_Z)
-    user32.RegisterHotKey(0, 2, MOD_CONTROL | MOD_SHIFT, VK_X)
-    user32.RegisterHotKey(0, 3, MOD_CONTROL | MOD_SHIFT, VK_C)
-    user32.RegisterHotKey(0, 4, MOD_CONTROL | MOD_SHIFT, VK_LEFT)
-    user32.RegisterHotKey(0, 5, MOD_CONTROL | MOD_SHIFT, VK_RIGHT)
-    user32.RegisterHotKey(0, 6, MOD_CONTROL | MOD_SHIFT, VK_UP)
-    user32.RegisterHotKey(0, 7, MOD_CONTROL | MOD_SHIFT, VK_DOWN)
-    user32.RegisterHotKey(0, 8, MOD_CONTROL | MOD_SHIFT, VK_M)
-    user32.RegisterHotKey(0, 9, MOD_CONTROL | MOD_SHIFT, VK_O)
-    user32.RegisterHotKey(0, 10, MOD_CONTROL | MOD_SHIFT, VK_K)
-    user32.RegisterHotKey(0, 11, MOD_CONTROL | MOD_SHIFT, VK_H)
+def _hotkeys():
+    # suppress=False гарантирует, что Windows отдаёт нажатия клавиш играм без задержек и ожидания Python
+    keyboard.add_hotkey("ctrl+shift+z",     lambda: handle("prev"),           suppress=False)
+    keyboard.add_hotkey("ctrl+shift+x",     lambda: handle("next"),           suppress=False)
+    keyboard.add_hotkey("ctrl+shift+c",     lambda: handle("play_pause"),     suppress=False)
+    keyboard.add_hotkey("ctrl+shift+left",  lambda: handle("seek_left"),      suppress=False)
+    keyboard.add_hotkey("ctrl+shift+right", lambda: handle("seek_right"),     suppress=False)
+    keyboard.add_hotkey("ctrl+shift+up",    lambda: handle("vol_up"),         suppress=False)
+    keyboard.add_hotkey("ctrl+shift+down",  lambda: handle("vol_down"),       suppress=False)
+    keyboard.add_hotkey("ctrl+shift+m",     lambda: handle("vol_mute"),       suppress=False)
+    keyboard.add_hotkey("ctrl+shift+o",     lambda: handle("toggle_overlay"), suppress=False)
+    keyboard.add_hotkey("ctrl+shift+k",     lambda: handle("show_help"),      suppress=False)
+    keyboard.add_hotkey("ctrl+shift+h",     lambda: handle("launch"),         suppress=False)
+    keyboard.wait()
 
 
 
@@ -880,8 +840,7 @@ def main():
 
     SIG.overlay.connect(_toggle_overlay)
 
-    app.installNativeEventFilter(HotkeyEventFilter())
-    _register_hotkeys()
+    threading.Thread(target=_hotkeys, daemon=True).start()
     sys.exit(app.exec())
 
 
