@@ -15,7 +15,7 @@ from PyQt6.QtCore import (
 )
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QHBoxLayout, QVBoxLayout,
-    QFrame, QProgressBar
+    QFrame, QProgressBar, QGraphicsOpacityEffect
 )
 from PyQt6.QtGui import (
     QPixmap, QPainter, QPainterPath, QColor, QPen,
@@ -475,6 +475,14 @@ class ToastHUD(GlassWidget):
         self.next_lbl.setWordWrap(True)
         k_lay.addWidget(self.next_lbl)
 
+        # Эффекты прозрачности для плавной анимации текста
+        self._curr_opacity = QGraphicsOpacityEffect(self.curr_lbl)
+        self.curr_lbl.setGraphicsEffect(self._curr_opacity)
+        self._prev_opacity = QGraphicsOpacityEffect(self.prev_lbl)
+        self.prev_lbl.setGraphicsEffect(self._prev_opacity)
+        self._next_opacity = QGraphicsOpacityEffect(self.next_lbl)
+        self.next_lbl.setGraphicsEffect(self._next_opacity)
+
         main_lay.addWidget(self.karaoke_widget)
         self.karaoke_widget.hide()
 
@@ -559,6 +567,28 @@ class ToastHUD(GlassWidget):
             self.prev_lbl.setText(prev_txt)
             self.curr_lbl.setText(curr_txt)
             self.next_lbl.setText(next_txt)
+
+            # Плавная анимация появления текста (Fade In)
+            self._anim_curr = QPropertyAnimation(self._curr_opacity, b"opacity", self)
+            self._anim_curr.setDuration(260)
+            self._anim_curr.setStartValue(0.15)
+            self._anim_curr.setEndValue(1.0)
+            self._anim_curr.setEasingCurve(QEasingCurve.Type.OutCubic)
+            self._anim_curr.start()
+
+            self._anim_prev = QPropertyAnimation(self._prev_opacity, b"opacity", self)
+            self._anim_prev.setDuration(260)
+            self._anim_prev.setStartValue(0.15)
+            self._anim_prev.setEndValue(0.50)
+            self._anim_prev.setEasingCurve(QEasingCurve.Type.OutCubic)
+            self._anim_prev.start()
+
+            self._anim_next = QPropertyAnimation(self._next_opacity, b"opacity", self)
+            self._anim_next.setDuration(260)
+            self._anim_next.setStartValue(0.15)
+            self._anim_next.setEndValue(0.50)
+            self._anim_next.setEasingCurve(QEasingCurve.Type.OutCubic)
+            self._anim_next.start()
 
     def _animate_in(self):
         if self._anim_group:
