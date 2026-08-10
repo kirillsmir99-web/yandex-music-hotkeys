@@ -163,9 +163,11 @@ def _apply_acrylic(hwnd: int):
 #  Signals
 # ══════════════════════════════════════════════════════════
 class _Signals(QObject):
-    toast   = pyqtSignal(str, str, str, str, int)
-    help    = pyqtSignal()
-    overlay = pyqtSignal()
+    toast          = pyqtSignal(str, str, str, str, int)
+    help           = pyqtSignal()
+    overlay        = pyqtSignal()
+    toggle_karaoke = pyqtSignal()
+    lyrics_loaded  = pyqtSignal(str, list)
 
 
 SIG = _Signals()
@@ -316,7 +318,53 @@ class GlassWidget(QWidget):
 
 
 # ══════════════════════════════════════════════════════════
-#  ToastHUD — всплывающее уведомление
+#  Karaoke / LRC Parser
+# ══════════════════════════════════════════════════════════
+CURRENT_TRACK_POS = 0.0
+
+def parse_lrc(lrc_text: str) -> list:
+    if not lrc_text:
+        return []
+    lines = []
+    for line in lrc_text.splitlines():
+        line = line.strip()
+        if line.startswith("[") and "]" in line:
+            parts = line.split("]", 1)
+            time_str = parts[0][1:]
+            text = parts[1].strip() if len(parts) > 1 else ""
+            if ":" in time_str:
+                try:
+                    m, s = time_str.split(":", 1)
+                    secs = float(m) * 60.0 + float(s)
+                    if text:
+                        lines.append((secs, text))
+                except ValueError:
+                    pass
+    lines.sort(key=lambda x: x[0])
+    return lines
+
+
+def _fetch_lrc(artist: str, title: str) -> list:
+    try:
+        import urllib.request, urllib.parse, json
+        clean_title = title.split("(")[0].split("-")[0].strip()
+        clean_artist = artist.split(",")[0].split("feat")[0].strip()
+
+        url = 'https://lrclib.net/api/get?' + urllib.parse.urlencode({
+            'artist_name': clean_artist,
+            'track_name': clean_title
+        })
+        req = urllib.request.Request(url, headers={'User-Agent': 'YandexMusicKaraoke/1.0'})
+        with urllib.request.urlopen(req, timeout=3.5) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            lrc_text = data.get('syncedLyrics') or data.get('plainLyrics') or ""
+            return parse_lrc(lrc_text)
+    except Exception:
+        return []
+
+
+# ══════════════════════════════════════════════════════════
+#  ToastHUD — всплывающее уведомление + Караоке
 # ══════════════════════════════════════════════════════════
 class ToastHUD(GlassWidget):
     def __init__(self):
@@ -324,9 +372,12 @@ class ToastHUD(GlassWidget):
         self.resize(362, 86)
 
         self._anim_group: QParallelAnimationGroup | None = None
+        self._karaoke_mode = False
+        self._current_track = ""
+        self._lrc_lines = []
+        self._last_idx = -2
 
-        # Таймер topmost: ТОЛЬКО SetWindowPos, НЕ ShowWindow
-        # (ShowWindow сбрасывает WS_EX_LAYERED и ломает анимацию прозрачности)
+        # Таймер topmost: ТОЛЬКО SetWindowPos
         self._topmost_timer = QTimer(self)
         self._topmost_timer.setInterval(80)
         self._topmost_timer.timeout.connect(
@@ -337,16 +388,27 @@ class ToastHUD(GlassWidget):
         self._hide_timer.setSingleShot(True)
         self._hide_timer.timeout.connect(self._animate_out)
 
+        self._lyrics_timer = QTimer(self)
+        self._lyrics_timer.setInterval(200)
+        self._lyrics_timer.timeout.connect(self._sync_lyrics)
+
+        SIG.toggle_karaoke.connect(self.toggle_karaoke)
+        SIG.lyrics_loaded.connect(self._on_lyrics_loaded)
+
         self._build_ui()
 
     def _build_ui(self):
-        lay = QHBoxLayout(self)
-        lay.setContentsMargins(15, 11, 15, 11)
-        lay.setSpacing(13)
+        main_lay = QVBoxLayout(self)
+        main_lay.setContentsMargins(15, 11, 15, 11)
+        main_lay.setSpacing(6)
+
+        top_lay = QHBoxLayout()
+        top_lay.setContentsMargins(0, 0, 0, 0)
+        top_lay.setSpacing(13)
 
         self.cover = CoverWidget(self)
         self.cover.setFixedSize(62, 62)
-        lay.addWidget(self.cover)
+        top_lay.addWidget(self.cover)
 
         col = QVBoxLayout()
         col.setContentsMargins(0, 0, 0, 0)
@@ -373,7 +435,111 @@ class ToastHUD(GlassWidget):
         self.vol_bar.hide()
         col.addWidget(self.vol_bar)
 
-        lay.addLayout(col)
+        top_lay.addLayout(col)
+        main_lay.addLayout(top_lay)
+
+        # Раскрывающийся блок Караоке
+        self.karaoke_widget = QWidget(self)
+        k_lay = QVBoxLayout(self.karaoke_widget)
+        k_lay.setContentsMargins(0, 2, 0, 2)
+        k_lay.setSpacing(3)
+
+        div = QFrame(self.karaoke_widget)
+        div.setFixedHeight(1)
+        div.setStyleSheet("background: rgba(255,255,255,0.09);")
+        k_lay.addWidget(div)
+
+        self.prev_lbl = QLabel("", self.karaoke_widget)
+        self.prev_lbl.setFont(QFont("Segoe UI", 9))
+        self.prev_lbl.setStyleSheet("color: rgba(140,145,170,0.55);")
+        self.prev_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.prev_lbl.setWordWrap(True)
+        k_lay.addWidget(self.prev_lbl)
+
+        self.curr_lbl = QLabel("🎤 Загрузка текста...", self.karaoke_widget)
+        self.curr_lbl.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.curr_lbl.setStyleSheet("color: rgba(255,215,0,0.95);")
+        self.curr_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.curr_lbl.setWordWrap(True)
+        k_lay.addWidget(self.curr_lbl)
+
+        self.next_lbl = QLabel("", self.karaoke_widget)
+        self.next_lbl.setFont(QFont("Segoe UI", 9))
+        self.next_lbl.setStyleSheet("color: rgba(140,145,170,0.55);")
+        self.next_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.next_lbl.setWordWrap(True)
+        k_lay.addWidget(self.next_lbl)
+
+        main_lay.addWidget(self.karaoke_widget)
+        self.karaoke_widget.hide()
+
+    def toggle_karaoke(self):
+        self._karaoke_mode = not self._karaoke_mode
+        scr = QApplication.primaryScreen().geometry()
+        end_x = scr.width() - self.width() - 24
+        end_y = 44
+
+        if self._karaoke_mode:
+            self._hide_timer.stop()
+            self.karaoke_widget.show()
+            self.resize(362, 220)
+            self.move(end_x, end_y)
+            self._lyrics_timer.start()
+            if not self.isVisible() or self.windowOpacity() < 0.5:
+                self._animate_in()
+            self._fetch_lyrics(self.artist_lbl.text(), self.title_lbl.text())
+        else:
+            self._lyrics_timer.stop()
+            self.karaoke_widget.hide()
+            self.resize(362, 86)
+            self.move(end_x, end_y)
+            self._hide_timer.start(3100)
+
+    def _fetch_lyrics(self, artist: str, title: str):
+        if not artist or not title:
+            return
+        key = f"{artist} - {title}"
+        if self._current_track == key and self._lrc_lines:
+            return
+        self._current_track = key
+        self._lrc_lines = []
+        self._last_idx = -2
+        self.curr_lbl.setText("🎤 Поиск текста...")
+        self.prev_lbl.setText("")
+        self.next_lbl.setText("")
+
+        def worker():
+            lines = _fetch_lrc(artist, title)
+            SIG.lyrics_loaded.emit(key, lines)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_lyrics_loaded(self, key: str, lines: list):
+        if self._current_track == key:
+            self._lrc_lines = lines
+            if not lines:
+                self.curr_lbl.setText("🎤 Текст песни не найден")
+                self.prev_lbl.setText("")
+                self.next_lbl.setText("")
+
+    def _sync_lyrics(self):
+        if not self._karaoke_mode or not self._lrc_lines:
+            return
+        pos = CURRENT_TRACK_POS
+        idx = -1
+        for i, (t, txt) in enumerate(self._lrc_lines):
+            if pos >= t:
+                idx = i
+            else:
+                break
+        if idx != self._last_idx:
+            self._last_idx = idx
+            prev_txt = self._lrc_lines[idx - 1][1] if idx > 0 else ""
+            curr_txt = self._lrc_lines[idx][1] if idx >= 0 else "🎵 ..."
+            next_txt = self._lrc_lines[idx + 1][1] if idx + 1 < len(self._lrc_lines) else ""
+            self.prev_lbl.setText(prev_txt)
+            self.curr_lbl.setText(curr_txt)
+            self.next_lbl.setText(next_txt)
 
     def _animate_in(self):
         if self._anim_group:
@@ -472,7 +638,12 @@ class ToastHUD(GlassWidget):
 
         self._load_cover(cover)
         self._animate_in()
-        self._hide_timer.start(3100)
+
+        if self._karaoke_mode:
+            self._hide_timer.stop()
+            self._fetch_lyrics(artist, title)
+        else:
+            self._hide_timer.start(3100)
 
 
 # ══════════════════════════════════════════════════════════
@@ -557,6 +728,7 @@ class HelpHUD(GlassWidget):
             ("Ctrl + Shift + ↑ / ↓",    "Громче / Тише"),
             ("Ctrl + Shift + M",         "Мут (Выключить звук)"),
             ("Ctrl + Shift + O",         "Вкл / Выкл уведомления"),
+            ("Ctrl + Shift + L",         "Вкл / Выкл Караоке (Текст)"),
             ("Ctrl + Shift + K",         "Показать / Скрыть это окно"),
             ("Ctrl + Shift + H",         "Запустить Яндекс Музыку"),
         ]
@@ -791,6 +963,7 @@ def handle(action: str):
     if action == "seek_left"  and HAS_WINSDK: _run(_seek(-10)); return
     if action == "seek_right" and HAS_WINSDK: _run(_seek(+10)); return
     if action == "toggle_overlay":  SIG.overlay.emit(); return
+    if action == "toggle_karaoke":  SIG.toggle_karaoke.emit(); return
     if action == "show_help":       SIG.help.emit();    return
     if action == "launch":
         if os.path.exists(YANDEX_PATH):
@@ -799,6 +972,29 @@ def handle(action: str):
         return
     if action in ("next", "prev", "play_pause") and HAS_WINSDK:
         _run(_media(action))
+
+
+def _pos_tracker():
+    async def loop_body():
+        global CURRENT_TRACK_POS
+        while True:
+            try:
+                if HAS_WINSDK:
+                    s = await _get_session()
+                    if s:
+                        tl = s.get_timeline_properties()
+                        if tl and tl.position:
+                            CURRENT_TRACK_POS = tl.position.total_seconds()
+            except Exception:
+                pass
+            await asyncio.sleep(0.15)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(loop_body())
+    except Exception:
+        pass
 
 
 def _hotkeys():
@@ -812,6 +1008,7 @@ def _hotkeys():
     keyboard.add_hotkey("ctrl+shift+down",  lambda: handle("vol_down"),       suppress=False)
     keyboard.add_hotkey("ctrl+shift+m",     lambda: handle("vol_mute"),       suppress=False)
     keyboard.add_hotkey("ctrl+shift+o",     lambda: handle("toggle_overlay"), suppress=False)
+    keyboard.add_hotkey("ctrl+shift+l",     lambda: handle("toggle_karaoke"), suppress=False)
     keyboard.add_hotkey("ctrl+shift+k",     lambda: handle("show_help"),      suppress=False)
     keyboard.add_hotkey("ctrl+shift+h",     lambda: handle("launch"),         suppress=False)
     keyboard.wait()
@@ -841,6 +1038,7 @@ def main():
     SIG.overlay.connect(_toggle_overlay)
 
     threading.Thread(target=_hotkeys, daemon=True).start()
+    threading.Thread(target=_pos_tracker, daemon=True).start()
     sys.exit(app.exec())
 
 
