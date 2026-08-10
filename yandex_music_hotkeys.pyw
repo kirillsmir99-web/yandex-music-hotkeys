@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 import os
 import time
@@ -7,10 +6,11 @@ import asyncio
 import threading
 import ctypes
 import subprocess
+import datetime
 
 from PyQt6.QtCore import (
     Qt, QTimer, QPropertyAnimation, QEasingCurve,
-    pyqtSignal, QObject, QRectF, QPoint,
+    pyqtSignal, QObject, QRectF, QPoint, QRect,
     QParallelAnimationGroup
 )
 from PyQt6.QtWidgets import (
@@ -441,31 +441,36 @@ class ToastHUD(GlassWidget):
         # Раскрывающийся блок Караоке
         self.karaoke_widget = QWidget(self)
         k_lay = QVBoxLayout(self.karaoke_widget)
-        k_lay.setContentsMargins(0, 2, 0, 2)
-        k_lay.setSpacing(3)
+        k_lay.setContentsMargins(0, 4, 0, 2)
+        k_lay.setSpacing(4)
 
         div = QFrame(self.karaoke_widget)
         div.setFixedHeight(1)
-        div.setStyleSheet("background: rgba(255,255,255,0.09);")
+        div.setStyleSheet("background: rgba(255,255,255,0.12);")
         k_lay.addWidget(div)
 
         self.prev_lbl = QLabel("", self.karaoke_widget)
         self.prev_lbl.setFont(QFont("Segoe UI", 9))
-        self.prev_lbl.setStyleSheet("color: rgba(140,145,170,0.55);")
+        self.prev_lbl.setStyleSheet("color: rgba(160,165,190,0.50);")
         self.prev_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.prev_lbl.setWordWrap(True)
         k_lay.addWidget(self.prev_lbl)
 
         self.curr_lbl = QLabel("🎤 Загрузка текста...", self.karaoke_widget)
         self.curr_lbl.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
-        self.curr_lbl.setStyleSheet("color: rgba(255,215,0,0.95);")
+        self.curr_lbl.setStyleSheet(
+            "color: rgba(255, 220, 70, 0.98); "
+            "padding: 5px 10px; "
+            "background: rgba(255, 215, 0, 0.09); "
+            "border-radius: 8px;"
+        )
         self.curr_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.curr_lbl.setWordWrap(True)
         k_lay.addWidget(self.curr_lbl)
 
         self.next_lbl = QLabel("", self.karaoke_widget)
         self.next_lbl.setFont(QFont("Segoe UI", 9))
-        self.next_lbl.setStyleSheet("color: rgba(140,145,170,0.55);")
+        self.next_lbl.setStyleSheet("color: rgba(160,165,190,0.50);")
         self.next_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.next_lbl.setWordWrap(True)
         k_lay.addWidget(self.next_lbl)
@@ -476,23 +481,37 @@ class ToastHUD(GlassWidget):
     def toggle_karaoke(self):
         self._karaoke_mode = not self._karaoke_mode
         scr = QApplication.primaryScreen().geometry()
-        end_x = scr.width() - self.width() - 24
+        end_x = scr.width() - 362 - 24
         end_y = 44
 
         if self._karaoke_mode:
             self._hide_timer.stop()
             self.karaoke_widget.show()
-            self.resize(362, 220)
-            self.move(end_x, end_y)
+            
+            anim = QPropertyAnimation(self, b"geometry", self)
+            anim.setDuration(360)
+            anim.setStartValue(QRect(self.x(), self.y(), 362, self.height()))
+            anim.setEndValue(QRect(end_x, end_y, 362, 235))
+            anim.setEasingCurve(QEasingCurve.Type.OutQuart)
+            anim.start()
+            self._size_anim = anim
+
             self._lyrics_timer.start()
             if not self.isVisible() or self.windowOpacity() < 0.5:
                 self._animate_in()
             self._fetch_lyrics(self.artist_lbl.text(), self.title_lbl.text())
         else:
             self._lyrics_timer.stop()
-            self.karaoke_widget.hide()
-            self.resize(362, 86)
-            self.move(end_x, end_y)
+            
+            anim = QPropertyAnimation(self, b"geometry", self)
+            anim.setDuration(300)
+            anim.setStartValue(QRect(self.x(), self.y(), 362, self.height()))
+            anim.setEndValue(QRect(end_x, end_y, 362, 86))
+            anim.setEasingCurve(QEasingCurve.Type.OutQuart)
+            anim.finished.connect(self.karaoke_widget.hide)
+            anim.start()
+            self._size_anim = anim
+
             self._hide_timer.start(3100)
 
     def _fetch_lyrics(self, artist: str, title: str):
@@ -974,6 +993,36 @@ def handle(action: str):
         _run(_media(action))
 
 
+LAST_TRACK_KEY = ""
+
+def _track_monitor():
+    async def loop_body():
+        global LAST_TRACK_KEY
+        while True:
+            try:
+                if HAS_WINSDK:
+                    s = await _get_session()
+                    if s:
+                        info = await s.try_get_media_properties_async()
+                        if info and info.title:
+                            key = f"{info.artist} - {info.title}"
+                            if key != LAST_TRACK_KEY:
+                                LAST_TRACK_KEY = key
+                                cover = await _get_cover(info)
+                                artist = info.artist or "Яндекс Музыка"
+                                SIG.toast.emit(info.title, artist, cover or "", "track", -1)
+            except Exception:
+                pass
+            await asyncio.sleep(1.0)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(loop_body())
+    except Exception:
+        pass
+
+
 def _pos_tracker():
     async def loop_body():
         global CURRENT_TRACK_POS
@@ -983,11 +1032,16 @@ def _pos_tracker():
                     s = await _get_session()
                     if s:
                         tl = s.get_timeline_properties()
-                        if tl and tl.position:
+                        pb = s.get_playback_info()
+                        if pb and pb.playback_status == 4 and tl and tl.position and tl.last_updated_time:
+                            now = datetime.datetime.now(datetime.timezone.utc)
+                            elapsed = (now - tl.last_updated_time).total_seconds()
+                            CURRENT_TRACK_POS = max(0.0, tl.position.total_seconds() + elapsed)
+                        elif tl and tl.position:
                             CURRENT_TRACK_POS = tl.position.total_seconds()
             except Exception:
                 pass
-            await asyncio.sleep(0.15)
+            await asyncio.sleep(0.1)
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -1039,6 +1093,7 @@ def main():
 
     threading.Thread(target=_hotkeys, daemon=True).start()
     threading.Thread(target=_pos_tracker, daemon=True).start()
+    threading.Thread(target=_track_monitor, daemon=True).start()
     sys.exit(app.exec())
 
 
