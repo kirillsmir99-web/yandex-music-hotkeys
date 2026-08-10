@@ -832,27 +832,8 @@ HOTKEY_MAPPING = {
     11: "launch",
 }
 
-class HotkeyManager(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setAttribute(Qt.WidgetAttribute.WA_NativeWindow, True)
-        self.hwnd = int(self.winId())
-        self._register_hotkeys()
-
-    def _register_hotkeys(self):
-        user32.RegisterHotKey(self.hwnd, 1, MOD_CONTROL | MOD_SHIFT, VK_Z)
-        user32.RegisterHotKey(self.hwnd, 2, MOD_CONTROL | MOD_SHIFT, VK_X)
-        user32.RegisterHotKey(self.hwnd, 3, MOD_CONTROL | MOD_SHIFT, VK_C)
-        user32.RegisterHotKey(self.hwnd, 4, MOD_CONTROL | MOD_SHIFT, VK_LEFT)
-        user32.RegisterHotKey(self.hwnd, 5, MOD_CONTROL | MOD_SHIFT, VK_RIGHT)
-        user32.RegisterHotKey(self.hwnd, 6, MOD_CONTROL | MOD_SHIFT, VK_UP)
-        user32.RegisterHotKey(self.hwnd, 7, MOD_CONTROL | MOD_SHIFT, VK_DOWN)
-        user32.RegisterHotKey(self.hwnd, 8, MOD_CONTROL | MOD_SHIFT, VK_M)
-        user32.RegisterHotKey(self.hwnd, 9, MOD_CONTROL | MOD_SHIFT, VK_O)
-        user32.RegisterHotKey(self.hwnd, 10, MOD_CONTROL | MOD_SHIFT, VK_K)
-        user32.RegisterHotKey(self.hwnd, 11, MOD_CONTROL | MOD_SHIFT, VK_H)
-
-    def nativeEvent(self, eventType, message):
+class HotkeyEventFilter(QAbstractNativeEventFilter):
+    def nativeEventFilter(self, eventType, message):
         if eventType == b"windows_generic_MSG" or eventType == b"windows_dispatcher_MSG":
             msg = ctypes.wintypes.MSG.from_address(message.__int__())
             if msg.message == WM_HOTKEY:
@@ -861,6 +842,21 @@ class HotkeyManager(QWidget):
                     handle(action)
                 return True, 0
         return False, 0
+
+def _register_hotkeys():
+    user32.RegisterHotKey(0, 1, MOD_CONTROL | MOD_SHIFT, VK_Z)
+    user32.RegisterHotKey(0, 2, MOD_CONTROL | MOD_SHIFT, VK_X)
+    user32.RegisterHotKey(0, 3, MOD_CONTROL | MOD_SHIFT, VK_C)
+    user32.RegisterHotKey(0, 4, MOD_CONTROL | MOD_SHIFT, VK_LEFT)
+    user32.RegisterHotKey(0, 5, MOD_CONTROL | MOD_SHIFT, VK_RIGHT)
+    user32.RegisterHotKey(0, 6, MOD_CONTROL | MOD_SHIFT, VK_UP)
+    user32.RegisterHotKey(0, 7, MOD_CONTROL | MOD_SHIFT, VK_DOWN)
+    user32.RegisterHotKey(0, 8, MOD_CONTROL | MOD_SHIFT, VK_M)
+    user32.RegisterHotKey(0, 9, MOD_CONTROL | MOD_SHIFT, VK_O)
+    user32.RegisterHotKey(0, 10, MOD_CONTROL | MOD_SHIFT, VK_K)
+    user32.RegisterHotKey(0, 11, MOD_CONTROL | MOD_SHIFT, VK_H)
+
+
 
 
 def main():
@@ -884,7 +880,8 @@ def main():
 
     SIG.overlay.connect(_toggle_overlay)
 
-    hotkey_mgr = HotkeyManager()
+    app.installNativeEventFilter(HotkeyEventFilter())
+    _register_hotkeys()
     sys.exit(app.exec())
 
 
