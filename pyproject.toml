@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yandex-music-game-overlay"
+version = "3.5.5"
+description = "Lightweight global-hotkey overlay for Yandex Music on Windows"
+requires-python = ">=3.11"
+authors = [{ name = "BRAT12344321" }]
+dependencies = [
+  "PyQt6>=6.7,<7",
+  "keyboard>=0.13.5,<1",
+  "winsdk>=1.0.0b10,<2",
+  "pycaw>=20240210,<20270000",
+  "comtypes>=1.4,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pyinstaller>=6.10,<7",
+  "pytest>=8,<10",
+  "ruff>=0.9,<1",
+]
+
+[tool.setuptools]
+packages = ["ym_overlay"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

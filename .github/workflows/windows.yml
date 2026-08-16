@@ -1,0 +1,45 @@
+name: Windows checks and build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Static checks
+        run: |
+          python -m ruff check .
+          python -m compileall -q ym_overlay tests
+
+      - name: Tests
+        run: python -m pytest -q
+
+      - name: Build EXE
+        shell: powershell
+        run: .\build.ps1
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v7
+        with:
+          name: YandexMusicGameOverlay-Windows
+          path: dist/YandexMusicGameOverlay.exe
+          if-no-files-found: error
+
