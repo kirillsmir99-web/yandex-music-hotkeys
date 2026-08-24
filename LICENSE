@@ -1,54 +1,21 @@
-ELARION MUSIC CONTROL COMMERCIAL PACKAGE LICENSE 1.0
+MIT License
 
-Copyright (c) 2026 BRAT12344321. All rights reserved.
+Copyright (c) 2026 BRAT12344321
 
-1. License grant
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-After a valid purchase, the buyer receives a non-exclusive, non-transferable license to use Elarion
-Music Control on devices controlled by that buyer and to modify the source code for the buyer's own
-use. One purchase belongs to one person or one legal entity.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-2. Permitted use
-
-The buyer may run the application, create personal builds, keep private backups and make internal
-modifications. The buyer may not claim authorship of the original product.
-
-3. Prohibited use
-
-Except for rights that continue to apply to the legacy MIT-covered code, the buyer may not publish,
-resell, sublicense, rent, exchange or share commercial-package materials, seller-provided builds,
-private repository access or proprietary updates with third parties. The buyer may not make the
-private repository public or use one purchase to supply unrelated people or organizations.
-
-4. Repository access
-
-Repository access is personal. The seller may revoke an invitation that was transferred, leaked or used
-to mirror the product publicly. Revocation does not erase the buyer's lawful right to keep the version
-already received, but it ends access to future repository updates.
-
-5. Third-party components
-
-This license applies to the Elarion Music Control 4.0 commercial package, its brand, documentation,
-seller-maintained updates and private repository access. Code previously released in version 3.5.5
-under the MIT License remains available under the terms in LICENSE-MIT-LEGACY. Third-party libraries,
-fonts and platform components remain under their own licenses listed in THIRD-PARTY-NOTICES.md. Nothing
-in this license restricts rights already granted by those licenses.
-
-6. No affiliation
-
-Elarion Music Control is an independent utility. It is not affiliated with, endorsed by or distributed
-by Yandex LLC. Yandex Music names and trademarks belong to their respective owners.
-
-7. Warranty
-
-The software is provided as is, without a guarantee that every game, Windows build, media session or
-third-party service will behave identically. The seller will correct reproducible defects within the
-supported environment when technically possible.
-
-8. Termination
-
-The license terminates when the buyer materially violates sections 3 or 4 and does not stop the violation
-after notice. Rights provided directly by third-party open-source licenses are not affected.
-
-Author: BRAT12344321
-Support: @kt1w_X
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

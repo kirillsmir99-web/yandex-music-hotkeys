@@ -100,9 +100,9 @@ Windows 10/11, Python 3.11+, настольное приложение Янде�
 - [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — установка и ежедневное использование;
 - [`docs/BEGINNER_GUIDE.md`](docs/BEGINNER_GUIDE.md) — исходники, проверка и сборка;
 - [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — решение типовых проблем;
-- [`docs/REPOSITORY_ACCESS.md`](docs/REPOSITORY_ACCESS.md) — правила доступа к закрытому репозиторию;
-- [`LICENSE`](LICENSE) — коммерческие права покупателя;
-- [`LICENSE-MIT-LEGACY`](LICENSE-MIT-LEGACY) — права на код ранее выпущенной версии 3.5.5;
+- [`docs/REPOSITORY_ACCESS.md`](docs/REPOSITORY_ACCESS.md) — где скачать код и готовую сборку;
+- [`LICENSE`](LICENSE) — свободная лицензия MIT;
 - [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) — лицензии библиотек и шрифтов.
 
 Elarion Music Control — независимая утилита и не является продуктом или официальным партнёром Яндекса.
+Исходный код открыт: его можно использовать, изменять и распространять на условиях MIT.

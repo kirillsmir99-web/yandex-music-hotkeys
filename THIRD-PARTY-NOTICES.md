@@ -1,7 +1,7 @@
 # Third-party notices
 
 Elarion Music Control is distributed with third-party components. Their licenses remain independent
-from the commercial license of the application itself.
+from the MIT License of the application itself.
 
 ## Runtime libraries
 
@@ -18,12 +18,12 @@ from the commercial license of the application itself.
 The included Wix Madefor and Sour Gummy fonts are distributed under the SIL Open Font License 1.1.
 Their complete license texts are stored in `assets/fonts`.
 
-Grechka SHA, Boingster and Grunge SHA are not included in the commercial archive unless the seller has
+Grechka SHA, Boingster and Grunge SHA are not included in release archives unless the distributor has
 separate redistribution permission. A buyer may place lawfully obtained font files into the personal
 fonts directory described in the user guide.
 
 ## Relinking and debugging
 
-Nothing in the Elarion commercial license prevents a buyer from replacing or debugging an LGPL-covered
+Nothing in the Elarion MIT License prevents a user from replacing or debugging an LGPL-covered
 library for the purpose allowed by the LGPL. The Python source delivery and dependency manifest make
 that replacement possible without disclosing proprietary application code to the public.
