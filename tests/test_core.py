@@ -1,6 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
-from ym_overlay.config import AUTHOR, HOTKEYS, NATIVE_HOTKEYS
+from ym_overlay.config import APP_NAME, APP_VERSION, AUTHOR, HOTKEYS, NATIVE_HOTKEYS
 from ym_overlay.lyrics import LyricLine, LyricsService, estimate_plain_lyrics, parse_lrc
 from ym_overlay.media import MediaController, session_score
 from ym_overlay.preferences import (
@@ -35,6 +35,8 @@ def test_parse_lrc_supports_word_timestamps() -> None:
 
 
 def test_public_metadata_and_hotkeys() -> None:
+    assert APP_NAME == "Elarion Music Control"
+    assert APP_VERSION == "4.0.0"
     assert AUTHOR == "BRAT12344321"
     assert len(HOTKEYS) == 16
     assert len(NATIVE_HOTKEYS) == 16

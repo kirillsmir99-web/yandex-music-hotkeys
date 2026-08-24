@@ -12,9 +12,10 @@ import urllib.request
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from pathlib import Path
 from threading import Lock
 from urllib.error import HTTPError
+
+from .storage import app_data_dir
 
 _TIMESTAMP = re.compile(r"\[(\d+):(\d+(?:\.\d+)?)\]")
 _WORD_TIMESTAMP = re.compile(r"<(\d+):(\d+(?:\.\d+)?)>")
@@ -99,8 +100,7 @@ class LyricsService:
             tuple[str, str, str, int], list[tuple[str, Callable[[str, list[LyricLine]], None]]]
         ] = {}
         self._lock = Lock()
-        cache_root = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "YandexMusicGameOverlay"
-        cache_root.mkdir(parents=True, exist_ok=True)
+        cache_root = app_data_dir()
         self._cache_path = cache_root / "lyrics-cache-v2.json"
         self._load_cache()
 
@@ -220,7 +220,7 @@ class LyricsService:
         yandex_lines = LyricsService._fetch_yandex(artist, title, duration)
         if yandex_lines:
             return yandex_lines
-        headers = {"User-Agent": "YandexMusicGameOverlay/3.5 (BRAT12344321)"}
+        headers = {"User-Agent": "ElarionMusicControl/4.0 (BRAT12344321)"}
         if album and duration > 0:
             exact_query = urllib.parse.urlencode(
                 {
@@ -287,7 +287,7 @@ class LyricsService:
             return []
         headers = {
             "Authorization": f"OAuth {token}",
-            "User-Agent": "YandexMusicGameOverlay/3.5 (BRAT12344321)",
+            "User-Agent": "ElarionMusicControl/4.0 (BRAT12344321)",
         }
         query = urllib.parse.urlencode(
             {"text": f"{artist} {title}", "type": "track", "page": 0, "nocorrect": "false"}

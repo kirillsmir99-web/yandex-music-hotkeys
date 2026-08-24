@@ -1,9 +1,9 @@
 import sys
 from pathlib import Path
 
-from PyQt6.QtGui import QFontDatabase
-from PyQt6.QtTest import QTest
-from PyQt6.QtWidgets import QApplication
+from PySide6.QtGui import QFontDatabase
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication
 
 import ym_overlay.windows as windows
 from ym_overlay.config import resource_path

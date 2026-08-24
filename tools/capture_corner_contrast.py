@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from PyQt6.QtCore import QPoint, Qt, QTimer
-from PyQt6.QtGui import QColor, QGuiApplication, QPainter
-from PyQt6.QtWidgets import QApplication, QWidget
+from PySide6.QtCore import QPoint, Qt, QTimer
+from PySide6.QtGui import QColor, QGuiApplication, QPainter
+from PySide6.QtWidgets import QApplication, QWidget
 
 from ym_overlay.models import OverlayMessage
 from ym_overlay.ui import ToastHUD

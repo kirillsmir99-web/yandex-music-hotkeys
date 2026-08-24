@@ -6,9 +6,9 @@ import threading
 from collections.abc import Callable
 from ctypes import wintypes
 
-from PyQt6.QtCore import QPoint, QRect
-from PyQt6.QtGui import QGuiApplication, QPainterPath, QRegion
-from PyQt6.QtWidgets import QWidget
+from PySide6.QtCore import QPoint, QRect
+from PySide6.QtGui import QGuiApplication, QPainterPath, QRegion
+from PySide6.QtWidgets import QWidget
 
 IS_WINDOWS = sys.platform == "win32"
 user32 = ctypes.windll.user32 if IS_WINDOWS else None

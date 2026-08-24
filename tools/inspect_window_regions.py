@@ -26,7 +26,7 @@ def main() -> int:
     entry = ProcessEntry(size=ctypes.sizeof(ProcessEntry))
     if ctypes.windll.kernel32.Process32FirstW(process_snapshot, ctypes.byref(entry)):
         while True:
-            if entry.executable.casefold() == "yandexmusicgameoverlay.exe":
+            if entry.executable.casefold() == "elarionmusiccontrol.exe":
                 process_ids.add(int(entry.process_id))
             if not ctypes.windll.kernel32.Process32NextW(process_snapshot, ctypes.byref(entry)):
                 break

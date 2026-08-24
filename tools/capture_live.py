@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PyQt6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication
 
 
 def main() -> int:

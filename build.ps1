@@ -11,13 +11,14 @@ if ($LASTEXITCODE -ne 0) { throw "Сборка иконки завершилас
     --clean `
     --onefile `
     --windowed `
-    --name YandexMusicGameOverlay `
+    --name ElarionMusicControl `
     --icon assets\app-icon.ico `
     --version-file assets\version_info.txt `
     --add-data "assets\fonts\WixMadeforDisplay-Variable.ttf;assets\fonts" `
     --add-data "assets\fonts\WixMadeforText-Variable.ttf;assets\fonts" `
     --add-data "assets\fonts\SourGummy-Variable.ttf;assets\fonts" `
-    --collect-all winsdk `
+    --hidden-import winsdk.windows.media.control `
+    --hidden-import winsdk.windows.storage.streams `
     --exclude-module numpy `
     --hidden-import pycaw `
     --hidden-import comtypes `

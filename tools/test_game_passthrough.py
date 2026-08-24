@@ -1,8 +1,8 @@
 import ctypes
 
 import keyboard
-from PyQt6.QtCore import QEvent, Qt, QTimer
-from PyQt6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
+from PySide6.QtCore import QEvent, Qt, QTimer
+from PySide6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 from ym_overlay.windows import foreground_is_fullscreen
 

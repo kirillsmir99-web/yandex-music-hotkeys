@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QSettings, Qt
-from PyQt6.QtGui import QKeySequence
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import QSettings, Qt
+from PySide6.QtGui import QKeySequence
+from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,

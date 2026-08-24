@@ -1,14 +1,14 @@
 from pathlib import Path
 
-from PyQt6.QtCore import QSettings
-from PyQt6.QtWidgets import QApplication
+from PySide6.QtCore import QSettings
+from PySide6.QtWidgets import QApplication
 
 from ym_overlay.settings_ui import FirstRunWizard, SettingsDialog
 
 
 def main() -> int:
     app = QApplication([])
-    settings = QSettings("BRAT12344321-preview", "YandexMusicGameOverlay")
+    settings = QSettings("BRAT12344321-preview", "ElarionMusicControl")
     fonts = ["Grechka SHA", "Boingster", "Grunge SHA", "Sour Gummy"]
     output = Path(__file__).parents[1] / "artifacts"
     output.mkdir(exist_ok=True)

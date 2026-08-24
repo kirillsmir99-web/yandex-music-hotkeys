@@ -1,6 +1,6 @@
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QColor, QGuiApplication, QPainter
-from PyQt6.QtWidgets import QApplication, QWidget
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QColor, QGuiApplication, QPainter
+from PySide6.QtWidgets import QApplication, QWidget
 
 
 class AnimatedBackground(QWidget):

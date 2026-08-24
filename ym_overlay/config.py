@@ -5,9 +5,12 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_NAME = "Yandex Music Game Overlay"
+APP_NAME = "Elarion Music Control"
+APP_VERSION = "4.0.0"
+APP_ID = "ElarionMusicControl"
 AUTHOR = "BRAT12344321"
-MUTEX_NAME = "Local\\YandexMusicGameOverlay_BRAT_12344321"
+SUPPORT = "@kt1w_X"
+MUTEX_NAME = "Local\\ElarionMusicControl_BRAT12344321"
 
 
 @dataclass(frozen=True, slots=True)

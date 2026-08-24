@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from bisect import bisect_right
 
-from PyQt6.QtCore import (
+from PySide6.QtCore import (
+    Property,
     QEasingCurve,
     QObject,
     QParallelAnimationGroup,
@@ -11,14 +12,12 @@ from PyQt6.QtCore import (
     QPropertyAnimation,
     QRect,
     QRectF,
-    QSettings,
     QSize,
     Qt,
     QTimer,
-    pyqtProperty,
-    pyqtSignal,
+    Signal,
 )
-from PyQt6.QtGui import (
+from PySide6.QtGui import (
     QColor,
     QFont,
     QFontMetricsF,
@@ -29,7 +28,7 @@ from PyQt6.QtGui import (
     QPixmap,
     QRadialGradient,
 )
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -43,21 +42,22 @@ from .config import AUTHOR, DISPLAY_FONT_FAMILY, FONT_FAMILY, HOTKEYS, THEME
 from .lyrics import LyricLine
 from .models import OverlayMessage, TrackState
 from .preferences import LYRICS_OFFSET_DEFAULT, normalize_lyrics_offset
+from .storage import create_settings
 from .windows import active_screen_geometry, apply_overlay_style, apply_rounded_mask, raise_topmost
 
 
 class UiBridge(QObject):
-    message = pyqtSignal(object)
-    track = pyqtSignal(object)
-    lyrics = pyqtSignal(str, object)
-    hotkey = pyqtSignal(str)
-    toggle_help = pyqtSignal()
-    toggle_notifications = pyqtSignal()
-    toggle_karaoke = pyqtSignal()
-    cycle_font = pyqtSignal()
-    lyrics_offset = pyqtSignal(float)
-    close_help = pyqtSignal()
-    toggle_edit_mode = pyqtSignal()
+    message = Signal(object)
+    track = Signal(object)
+    lyrics = Signal(str, object)
+    hotkey = Signal(str)
+    toggle_help = Signal()
+    toggle_notifications = Signal()
+    toggle_karaoke = Signal()
+    cycle_font = Signal()
+    lyrics_offset = Signal(float)
+    close_help = Signal()
+    toggle_edit_mode = Signal()
 
 
 class LiquidGlassWindow(QWidget):
@@ -66,7 +66,7 @@ class LiquidGlassWindow(QWidget):
         self._radius = radius
         self._click_through = click_through
         self._position_key = position_key
-        self._settings = QSettings("BRAT12344321", "YandexMusicGameOverlay")
+        self._settings = create_settings()
         self._ui_scale = max(
             0.7,
             min(1.6, float(self._settings.value(f"scale/{position_key}", 1.0))),
@@ -243,7 +243,7 @@ class LiquidGlassWindow(QWidget):
         self._reveal = max(0.0, min(1.0, value))
         self.update()
 
-    reveal = pyqtProperty(float, get_reveal, set_reveal)
+    reveal = Property(float, get_reveal, set_reveal)
 
     def capture_backdrop(self) -> None:
         """Capture and soften only the pixels behind the final HUD rectangle."""
@@ -375,7 +375,7 @@ class KaraokeLine(QWidget):
         self._transition = value
         self.update()
 
-    transition = pyqtProperty(float, get_transition, set_transition)
+    transition = Property(float, get_transition, set_transition)
 
     def set_empty_text(self, text: str) -> None:
         self._empty_text = text

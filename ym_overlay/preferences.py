@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QSettings
+from PySide6.QtCore import QSettings
 
 from .config import HOTKEYS
 

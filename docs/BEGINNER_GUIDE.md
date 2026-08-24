@@ -1,4 +1,4 @@
-# Руководство для новичка
+# Полное руководство Elarion Music Control
 
 Это исходники игрового оверлея для настольного приложения Яндекс Музыки. Оверлей работает в фоне,
 реагирует на глобальные сочетания клавиш и показывает небольшие окна поверх игры.
@@ -85,14 +85,18 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\build.ps1
 ```
 
-Готовый файл появится в `dist\YandexMusicGameOverlay.exe`. Сборка не устанавливает приложение и не
+Готовый файл появится в `dist\ElarionMusicControl.exe`. Сборка не устанавливает приложение и не
 заменяет уже установленную копию.
 
 ## Где хранятся настройки
 
-- параметры приложения: `HKEY_CURRENT_USER\Software\BRAT12344321\YandexMusicGameOverlay`;
-- журнал: `%LOCALAPPDATA%\YandexMusicGameOverlay\overlay.log`;
-- дополнительные пользовательские шрифты: `%LOCALAPPDATA%\YandexMusicGameOverlay\fonts`.
+- параметры приложения: `HKEY_CURRENT_USER\Software\BRAT12344321\ElarionMusicControl`;
+- журнал: `%LOCALAPPDATA%\ElarionMusicControl\overlay.log`;
+- кэш текста: `%LOCALAPPDATA%\ElarionMusicControl\lyrics-cache-v2.json`;
+- дополнительные пользовательские шрифты: `%LOCALAPPDATA%\ElarionMusicControl\fonts`.
+
+При первом запуске версии 4.0.0 приложение безопасно копирует совместимые настройки, кэш и шрифты из
+старой папки `YandexMusicGameOverlay`. Старые данные не удаляются, поэтому обновление можно откатить.
 
 Не добавляйте токены, журналы, `.venv`, папки `build` и `dist` в Git. Они исключены через `.gitignore`.
 

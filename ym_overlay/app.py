@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import logging
-import os
 import subprocess
 import sys
 import time
 from logging.handlers import RotatingFileHandler
-from pathlib import Path
 
 import keyboard
-from PyQt6.QtCore import QSettings, Qt, QTimer
-from PyQt6.QtGui import QAction, QFont, QFontDatabase, QIcon
-from PyQt6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QAction, QFont, QFontDatabase, QIcon
+from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from .config import (
     APP_NAME,
@@ -33,6 +31,7 @@ from .preferences import (
     validate_hotkeys,
 )
 from .settings_ui import FirstRunWizard, SettingsDialog
+from .storage import app_data_dir, create_settings
 from .ui import HelpHUD, ToastHUD, UiBridge
 from .windows import (
     GlobalHotkeyManager,
@@ -62,8 +61,7 @@ ACTION_BY_HOTKEY = {
 
 
 def _configure_logging() -> logging.Logger:
-    local = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "YandexMusicGameOverlay"
-    local.mkdir(parents=True, exist_ok=True)
+    local = app_data_dir()
     handler = RotatingFileHandler(local / "overlay.log", maxBytes=512_000, backupCount=2, encoding="utf-8")
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logger = logging.getLogger("ym_overlay")
@@ -79,7 +77,7 @@ class OverlayApplication:
         self.bridge = UiBridge()
         self.media = MediaController(self.bridge.message.emit, self.bridge.track.emit)
         self.lyrics = LyricsService()
-        self.settings = QSettings("BRAT12344321", "YandexMusicGameOverlay")
+        self.settings = create_settings()
         self.toast = ToastHUD(self.media.current_position)
         self.help = HelpHUD()
         self.notifications = True
@@ -132,7 +130,7 @@ class OverlayApplication:
         self.bridge.toggle_edit_mode.connect(self._toggle_edit_mode)
         self.bridge.hotkey.connect(self._dispatch)
         self._game_timer = QTimer(self.qt_app)
-        self._game_timer.setInterval(200)
+        self._game_timer.setInterval(750)
         self._game_timer.timeout.connect(self._check_game_mode)
 
     def start(self) -> None:
@@ -246,6 +244,9 @@ class OverlayApplication:
         game_foreground = foreground_prefers_passthrough()
         self._game_active = self._game_mode and game_foreground
         self._switch_hotkey_mode(game_foreground)
+        target_interval = 250 if game_foreground else 1_000
+        if self._game_timer.interval() != target_interval:
+            self._game_timer.setInterval(target_interval)
 
     def _start_passthrough_hotkeys(self) -> int:
         return self.game_hotkeys.restart(self._native_bindings())
@@ -490,7 +491,7 @@ def run() -> int:
             str(resource_path("assets/fonts/SourGummy-Variable.ttf"))
         ),
     ]
-    optional_font_dir = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "YandexMusicGameOverlay" / "fonts"
+    optional_font_dir = app_data_dir() / "fonts"
     optional_font_dir.mkdir(parents=True, exist_ok=True)
     for font_path in (*optional_font_dir.glob("*.ttf"), *optional_font_dir.glob("*.otf")):
         QFontDatabase.addApplicationFont(str(font_path))

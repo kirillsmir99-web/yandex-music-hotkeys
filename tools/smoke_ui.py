@@ -1,8 +1,8 @@
 import sys
 import time
 
-from PyQt6.QtTest import QTest
-from PyQt6.QtWidgets import QApplication
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication
 
 import ym_overlay.windows as windows
 from ym_overlay.lyrics import LyricLine
